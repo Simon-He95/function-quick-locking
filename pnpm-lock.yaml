@@ -20,9 +20,12 @@ importers:
       '@typescript-eslint/typescript-estree':
         specifier: ^6.7.2
         version: 6.7.2(typescript@5.0.3)
+      '@vscode-use/treeprovider':
+        specifier: ^0.0.1
+        version: 0.0.1
       '@vscode-use/utils':
-        specifier: ^0.0.38
-        version: 0.0.38
+        specifier: ^0.0.39
+        version: 0.0.39
       '@vue/compiler-sfc':
         specifier: ^3.3.4
         version: 3.3.4
@@ -758,8 +761,13 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
-  /@vscode-use/utils@0.0.38:
-    resolution: {integrity: sha512-z06p72vMqTFJ3nmeNaz5bIHzBcFBK8X7WRrEehMRp/pQ8qv/BH1OLJFcSgGoOGGXHGSEXXm7N9wQR19x9qUUZg==}
+  /@vscode-use/treeprovider@0.0.1:
+    resolution: {integrity: sha512-ecAiUVyheBTtMN6W6wf0kb4Ommnm5c4RgfmmWiNB0UdEs7GxbuJ0BULRhtnk6nvW4FB07fJYpbwgd1jjHqHUoA==}
+    engines: {vscode: ^1.77.0}
+    dev: true
+
+  /@vscode-use/utils@0.0.39:
+    resolution: {integrity: sha512-GFXmk3WTSDdJ2INdKR05eDxFOVATaQ76JBgg7qGzcVrcQBT3OYaoF7HACXE3FMvtehzePLDf3sA9x7rvTAlQoA==}
     engines: {vscode: ^1.77.0}
     dev: true
 

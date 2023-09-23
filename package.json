@@ -33,6 +33,25 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "function-quick-locking",
+          "title": "function-quick-locking",
+          "icon": "icon.png"
+        }
+      ]
+    },
+    "views": {
+      "function-quick-locking": [
+        {
+          "id": "function-quick-locking.id",
+          "name": "function-quick-locking"
+        }
+      ]
+    }
+  },
   "scripts": {
     "dev": "pnpm build --watch",
     "test": "vitest",
@@ -49,7 +68,8 @@
     "@types/node": "^18.15.11",
     "@types/vscode": "^1.77.0",
     "@typescript-eslint/typescript-estree": "^6.7.2",
-    "@vscode-use/utils": "^0.0.38",
+    "@vscode-use/treeprovider": "^0.0.1",
+    "@vscode-use/utils": "^0.0.39",
     "@vue/compiler-sfc": "^3.3.4",
     "bumpp": "^9.1.0",
     "eslint": "^8.37.0",

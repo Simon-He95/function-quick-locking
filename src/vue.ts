@@ -62,7 +62,6 @@ export function parserDefault(ast: VueAst) {
       value = properties
       locs.push(properties.map((item: any) => item.loc))
     }
-
     result[name] = {
       value,
       locs,

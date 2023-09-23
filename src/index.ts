@@ -1,9 +1,11 @@
 import { getActiveText, getActiveTextEditorLanguageId } from '@vscode-use/utils'
 import { parse } from '@vue/compiler-sfc'
 import { parse as tsParser } from '@typescript-eslint/typescript-estree'
+import type { ExtensionContext } from 'vscode'
 import { parserDefault, parserSetup } from './vue'
+import { renderTree } from './treeProvider'
 
-export function activate() {
+export function activate(context: ExtensionContext) {
   const lan = getActiveTextEditorLanguageId()
   const code = getActiveText()
   if (!code)
@@ -22,6 +24,7 @@ export function activate() {
       if (!data)
         return
       // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
+      renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context)
     }
   }
 }
