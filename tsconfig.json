@@ -5,6 +5,9 @@
     "lib": ["esnext"],
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "paths": {
+      "@typescript-eslint/typescript-estree": ["./node_modules/@typescript-eslint/typescript-estree/dist/index"]
+    },
     "strict": true,
     "strictNullChecks": true,
     "resolveJsonModule": true,
