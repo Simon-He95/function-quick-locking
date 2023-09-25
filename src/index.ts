@@ -3,7 +3,8 @@ import { parse } from '@vue/compiler-sfc'
 import { parse as tsParser } from '@typescript-eslint/typescript-estree'
 import type { ExtensionContext } from 'vscode'
 import { parserDefault, parserSetup } from './vue'
-import { renderTree } from './treeProvider'
+import { parserJavascript } from './javascript'
+import { renderTree, renderJavasriptTree } from './treeProvider'
 
 export function activate(context: ExtensionContext) {
   let treeProvider: any = null
@@ -29,6 +30,14 @@ export function activate(context: ExtensionContext) {
           treeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context, !!scriptSetup)
         else
           treeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+        break
+      }
+      case 'javascript': {
+        const data = parserJavascript(tsParser(code))
+        if (!treeProvider)
+          treeProvider = renderJavasriptTree(data, context)
+        else
+          treeProvider.update(data)
       }
     }
   }

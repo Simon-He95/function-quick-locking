@@ -28,7 +28,9 @@ function generateTreeData(content: any) {
       collapsed: true,
       iconPath: new vscode.ThemeIcon('symbol-module'),
       children: methods.value.map((item: any) => {
-        const label = item.key.name
+        let label = item.key.name
+        const params = item.value.type === 'Identifier' ? item.value.name : item.value.params.map((item: any) => item.name).join(',')
+        label += `    --->    (${params}) => {}`
         return {
           label,
           iconPath: new vscode.ThemeIcon('symbol-method'),
@@ -47,9 +49,22 @@ function generateTreeData(content: any) {
       collapsed: true,
       iconPath: new vscode.ThemeIcon('symbol-module'),
       children: computed.value.map((item: any) => {
-        const label = item.type === 'SpreadElement'
-          ? item.argument.callee.name
-          : item.key.name
+        let label = ''
+        let params = ''
+        if (item.type === 'SpreadElement') {
+          label = item.argument.callee.name
+          params = item.argument.arguments.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else {
+          label = item.key.name
+          params = item.value.type === 'FunctionExpression' ? item.value.params.map((u: any) => u.key.name).join(',') : item.value.properties.map((u: any) => u.key.name).join(',')
+        }
+        label += `    --->    (${params}) => {}`
+
         return {
           label,
           iconPath: new vscode.ThemeIcon('symbol-method'),
@@ -110,43 +125,73 @@ function generateTreeData(content: any) {
 
 function generateSetupTreeData(data: any) {
   const treeData: TreeData = []
-  const { methods, importer, type, baseLine, variable } = data
-  if (methods) {
+  const { methods, importer, type, baseLine, variables } = data
+  if (methods && methods.length) {
     treeData.push({
       label: 'methods',
       collapsed: true,
       iconPath: new vscode.ThemeIcon('symbol-module'),
-      children: Object.keys(methods).map((label) => {
-        const item = methods[label]
-        const loc = Array.isArray(item.value) ? item.value[0].loc : item.value.loc
+      children: methods.map((item: any) => {
+        let label = ''
+        let params = ''
+        const type = item.type
+        if (type === 'ExpressionStatement') {
+          label = item.expression.callee.name
+          params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'FunctionDeclaration') {
+          label = item.id.name
+          params = item.params.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'VariableDeclaration') {
+          label = item.declarations[0].id.name
+          params = getValue(item.declarations[0])
+        }
+        label += `    --->    (${params}) => {}`
         return {
           label,
           iconPath: new vscode.ThemeIcon('symbol-method'),
           command: {
             title: label,
             command: 'function-quick-locking.jump',
-            arguments: [loc, baseLine],
+            arguments: [item.loc, baseLine],
           },
         }
       }),
     })
   }
-  if (variable) {
+  if (variables && variables.length) {
     treeData.push({
       label: 'variable',
       collapsed: true,
       iconPath: new vscode.ThemeIcon('symbol-module'),
-      children: Object.keys(variable).map((key) => {
-        const item = variable[key]
-        const labelDefault = getValue(item.value)
-        const label = `${key}   --->    ${JSON.stringify(labelDefault)}`
+      children: variables.map((item: any) => {
+        let label = ''
+        const type = item.type
+        if (type === 'ExpressionStatement')
+          label = item.expression.callee.name
+        else if (type === 'FunctionDeclaration')
+          label = item.id.name
+        else if (type === 'VariableDeclaration')
+          label = item.declarations[0].id.name
+
+        const labelDefault = getValue(item)
+        label += `   --->    ${JSON.stringify(labelDefault)}`
         return {
           label,
           iconPath: new vscode.ThemeIcon('variable'),
           command: {
             title: label,
             command: 'function-quick-locking.jump',
-            arguments: [item.value.loc, baseLine],
+            arguments: [item.loc, baseLine],
           },
         }
       }),
@@ -186,7 +231,7 @@ function generateSetupTreeData(data: any) {
   return treeData
 }
 
-function getValue(data: any) {
+function getValue(data: any): any {
   const type = data.type
   if (type === 'ObjectExpression') {
     return data.properties.reduce((result: any, item: any) => {
@@ -224,7 +269,33 @@ function getValue(data: any) {
   else if (type === 'ArrowFunctionExpression') {
     return `(${data.params.map((item: any) => item.name).join(',')}) => {}`
   }
+  else if (type === 'VariableDeclaration') {
+    return `${data.kind} ${data.declarations[0].id.name} = ${getValue(data.declarations[0].init)}`
+  }
   else {
     return ''
   }
+}
+
+
+export function renderJavasriptTree(data:any,context:ExtensionContext){
+  const treeData: TreeData = generateJavascriptTreeData(data)
+  context.subscriptions.push(registerCommand('function-quick-locking.jump', (data, baseLine) => {
+    jumpToLine(data.start.line + baseLine - 1)
+  }))
+  const { update } = render(treeData, 'function-quick-locking.id')
+
+  return {
+    update(data: any, isSetup?: boolean) {
+      const newTreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+      update(newTreeData)
+    },
+  }
+}
+
+function generateJavascriptTreeData(data:any){
+  const treeData: TreeData = []
+
+  debugger
+  return treeData
 }
