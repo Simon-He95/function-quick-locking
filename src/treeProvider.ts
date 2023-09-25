@@ -110,7 +110,7 @@ function generateTreeData(content: any) {
 
 function generateSetupTreeData(data: any) {
   const treeData: TreeData = []
-  const { methods, importer, type, baseLine } = data
+  const { methods, importer, type, baseLine, variable } = data
   if (methods) {
     treeData.push({
       label: 'methods',
@@ -131,10 +131,61 @@ function generateSetupTreeData(data: any) {
       }),
     })
   }
+  if (variable) {
+    treeData.push({
+      label: 'variable',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: Object.keys(variable).map((key) => {
+        const item = variable[key]
+        const labelDefault = getValue(item.value)
+        const label = `${key}   --->    ${JSON.stringify(labelDefault)}`
+        return {
+          label,
+          iconPath: new vscode.ThemeIcon('variable'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.value.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
+  if (importer) {
+    treeData.push({
+      label: 'importer',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: importer.map((item: any) => {
+        let isDefault = false
+        const names: string[] = []
+        const specifiers = item.specifiers
+        const from = item.source.value
+        specifiers.forEach((cur: any) => {
+          if (cur.type === 'ImportDefaultSpecifier')
+            isDefault = true
+
+          names.push(cur.local.name)
+        })
+        const label = isDefault
+          ? `import ${names[0]} from ${from}`
+          : `import { ${names.join(',')} } from ${from}`
+        return {
+          label,
+          iconPath: new vscode.ThemeIcon('extensions'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
   return treeData
 }
 
-const temp = ''
 function getValue(data: any) {
   const type = data.type
   if (type === 'ObjectExpression') {
@@ -162,6 +213,16 @@ function getValue(data: any) {
   }
   else if (type === 'FunctionExpression') {
     return getValue(data.body.body[0].argument)
+  }
+  else if (type === 'CallExpression') {
+    return `${data.callee.name}(${data.arguments.map(getValue).reduce((result: string, cur: any) =>
+      result
+        ? `${result},${JSON.stringify(cur)}`
+        : JSON.stringify(cur)
+      , '')})`
+  }
+  else if (type === 'ArrowFunctionExpression') {
+    return `(${data.params.map((item: any) => item.name).join(',')}) => {}`
   }
   else {
     return ''
