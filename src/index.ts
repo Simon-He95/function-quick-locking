@@ -22,14 +22,13 @@ export function activate(context: ExtensionContext) {
           data = parserSetup(tsParser(scriptSetup.content, { jsx: true, loc: true }))
         else if (script)
           data = parserDefault(tsParser(script.content, { jsx: true, loc: true }))
-
         if (!data)
           return
         // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
         if (!treeProvider)
-          treeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context)
+          treeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context, !!scriptSetup)
         else
-          treeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line })
+          treeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
       }
     }
   }

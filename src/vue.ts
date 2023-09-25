@@ -56,11 +56,14 @@ export function parserDefault(ast: VueAst) {
   const result: any = {}
   target.declaration.properties.forEach((property: any) => {
     const name = property.key.name
-    let { type, value, properties } = property.value
+    let { type, value, properties, body } = property.value
     const locs: any[] = [property.loc]
     if (type === 'ObjectExpression') {
       value = properties
       locs.push(properties.map((item: any) => item.loc))
+    }
+    else if (name === 'data' && type === 'FunctionExpression') {
+      value = body.body[0].argument.properties
     }
     result[name] = {
       value,
