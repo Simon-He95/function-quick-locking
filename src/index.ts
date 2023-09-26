@@ -4,11 +4,11 @@ import { parse as tsParser } from '@typescript-eslint/typescript-estree'
 import type { ExtensionContext } from 'vscode'
 import { parserDefault, parserSetup } from './vue'
 import { parserJavascript } from './javascript'
-import { renderJavasriptTree, renderTree } from './treeProvider'
+import { renderJavascriptTree, renderTree } from './treeProvider'
 
 export function activate(context: ExtensionContext) {
-  let treeProvider: any = null
-
+  let vueTreeProvider: any = null
+  let javascriptTreeProvider: any = null
   context.subscriptions.push(registerCommand('function-quick-locking.jump', (data, baseLine) => {
     jumpToLine(baseLine !== undefined ? data.start.line + baseLine - 1 : data.start.line)
   }))
@@ -30,19 +30,19 @@ export function activate(context: ExtensionContext) {
         if (!data)
           return
         // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
-        if (!treeProvider)
-          treeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context, !!scriptSetup)
+        if (!vueTreeProvider)
+          vueTreeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context, !!scriptSetup)
         else
-          treeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+          vueTreeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
         break
       }
       case 'typescript':
       case 'javascript': {
         const data = parserJavascript(tsParser(code, { jsx: true, loc: true }))
-        if (!treeProvider)
-          treeProvider = renderJavasriptTree(data, context)
+        if (!javascriptTreeProvider)
+          javascriptTreeProvider = renderJavascriptTree(data, context)
         else
-          treeProvider.update(data)
+          javascriptTreeProvider.update(data)
       }
     }
   }

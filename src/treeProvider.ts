@@ -274,7 +274,7 @@ function getValue(data: any): any {
   }
 }
 
-export function renderJavasriptTree(data: any, context: ExtensionContext) {
+export function renderJavascriptTree(data: any, context: ExtensionContext) {
   const treeData: TreeData = generateJavascriptTreeData(data)
 
   const { update } = render(treeData, 'function-quick-locking.id')
