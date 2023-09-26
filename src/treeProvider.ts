@@ -1,14 +1,11 @@
 import { renderTree as render } from '@vscode-use/treeprovider'
-import { jumpToLine, registerCommand } from '@vscode-use/utils'
 import type { TreeData } from '@vscode-use/treeprovider'
 import type { ExtensionContext } from 'vscode'
 import * as vscode from 'vscode'
 
 export function renderTree(data: any, context: ExtensionContext, isSetup?: boolean) {
   const treeData: TreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
-  context.subscriptions.push(registerCommand('function-quick-locking.jump', (data, baseLine) => {
-    jumpToLine(data.start.line + baseLine - 1)
-  }))
+
   const { update } = render(treeData, 'function-quick-locking.id')
 
   return {
@@ -277,12 +274,9 @@ function getValue(data: any): any {
   }
 }
 
-
-export function renderJavasriptTree(data:any,context:ExtensionContext){
+export function renderJavasriptTree(data: any, context: ExtensionContext) {
   const treeData: TreeData = generateJavascriptTreeData(data)
-  context.subscriptions.push(registerCommand('function-quick-locking.jump', (data, baseLine) => {
-    jumpToLine(data.start.line + baseLine - 1)
-  }))
+
   const { update } = render(treeData, 'function-quick-locking.id')
 
   return {
@@ -293,9 +287,64 @@ export function renderJavasriptTree(data:any,context:ExtensionContext){
   }
 }
 
-function generateJavascriptTreeData(data:any){
+function generateJavascriptTreeData(data: any) {
   const treeData: TreeData = []
-
-  debugger
+  const { importer, exporter, methods } = data
+  if (methods) {
+    treeData.push({
+      label: 'methods',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: methods.map((item: any) => {
+        let label = ''
+        let params = ''
+        const type = item.type
+        if (type === 'ExpressionStatement') {
+          label = item.expression.callee.name
+          params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'FunctionDeclaration') {
+          label = item.id.name
+          params = item.params.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'VariableDeclaration') {
+          label = item.declarations[0].id.name
+          params = getValue(item.declarations[0])
+        }
+        else if (type === 'ExportNamedDeclaration') {
+          if (item.declaration.type === 'FunctionDeclaration') {
+            label = item.declaration.id.name
+            params = item.declaration.params.map(getValue).reduce((result: string, cur: any) =>
+              result
+                ? `${result},${JSON.stringify(cur)}`
+                : JSON.stringify(cur)
+            , '')
+          }
+          else {
+            label = item.declaration.declarations[0].id.name
+            params = getValue(item.declaration.declarations[0].init)
+          }
+        }
+        label += `    --->    (${params}) => {}`
+        return {
+          label,
+          iconPath: new vscode.ThemeIcon('symbol-method'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc],
+          },
+        }
+      }),
+    })
+  }
   return treeData
 }

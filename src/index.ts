@@ -1,13 +1,17 @@
-import { addEventListener, getActiveText, getActiveTextEditorLanguageId } from '@vscode-use/utils'
+import { addEventListener, getActiveText, getActiveTextEditorLanguageId, jumpToLine, registerCommand } from '@vscode-use/utils'
 import { parse } from '@vue/compiler-sfc'
 import { parse as tsParser } from '@typescript-eslint/typescript-estree'
 import type { ExtensionContext } from 'vscode'
 import { parserDefault, parserSetup } from './vue'
 import { parserJavascript } from './javascript'
-import { renderTree, renderJavasriptTree } from './treeProvider'
+import { renderJavasriptTree, renderTree } from './treeProvider'
 
 export function activate(context: ExtensionContext) {
   let treeProvider: any = null
+
+  context.subscriptions.push(registerCommand('function-quick-locking.jump', (data, baseLine) => {
+    jumpToLine(baseLine !== undefined ? data.start.line + baseLine - 1 : data.start.line)
+  }))
   const updateTree = () => {
     const lan = getActiveTextEditorLanguageId()
     const code = getActiveText()
@@ -32,8 +36,9 @@ export function activate(context: ExtensionContext) {
           treeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
         break
       }
+      case 'typescript':
       case 'javascript': {
-        const data = parserJavascript(tsParser(code))
+        const data = parserJavascript(tsParser(code, { jsx: true, loc: true }))
         if (!treeProvider)
           treeProvider = renderJavasriptTree(data, context)
         else
