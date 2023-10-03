@@ -1,16 +1,15 @@
 import { renderTree as render } from '@vscode-use/treeprovider'
 import type { TreeData } from '@vscode-use/treeprovider'
-import type { ExtensionContext } from 'vscode'
 import * as vscode from 'vscode'
 
-export function renderTree(data: any, context: ExtensionContext, isSetup?: boolean) {
-  let treeData: TreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+export function renderTree(data: any, isSetup?: boolean) {
+  let treeData: TreeData = filterEmptyChildren(isSetup ? generateSetupTreeData(data) : generateTreeData(data))
   let type = isSetup ? 'setup' : 'default'
   const { update } = render(treeData, 'function-quick-locking.id')
   return {
     update(data: any, isSetup?: boolean) {
       this.type = type = isSetup ? 'setup' : 'default'
-      treeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+      treeData = filterEmptyChildren(isSetup ? generateSetupTreeData(data) : generateTreeData(data))
       update(treeData)
     },
     treeData,
@@ -284,14 +283,13 @@ function getValue(data: any): any {
   }
 }
 
-export function renderJavascriptTree(data: any, context: ExtensionContext) {
-  let treeData: TreeData = generateJavascriptTreeData(data)
-
+export function renderJavascriptTree(data: any) {
+  let treeData: TreeData = filterEmptyChildren(generateJavascriptTreeData(data))
   const { update } = render(treeData, 'function-quick-locking.id')
 
   return {
-    update(data: any, isSetup?: boolean) {
-      treeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+    update(data: any) {
+      treeData = filterEmptyChildren(generateJavascriptTreeData(data))
       update(treeData)
     },
   }
@@ -357,4 +355,8 @@ function generateJavascriptTreeData(data: any) {
     })
   }
   return treeData
+}
+
+function filterEmptyChildren(data: any) {
+  return data.filter((item: any) => item.children && item.children.length)
 }

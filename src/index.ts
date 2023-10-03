@@ -31,7 +31,7 @@ export function activate(context: ExtensionContext) {
           return
         // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
         if (!contextMap.vueTreeProvider)
-          contextMap.vueTreeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, context, !!scriptSetup)
+          contextMap.vueTreeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
         else
           contextMap.vueTreeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
         break
@@ -40,7 +40,7 @@ export function activate(context: ExtensionContext) {
       case 'javascript': {
         const data = parserJavascript(tsParser(code, { jsx: true, loc: true }))
         if (!contextMap.javascriptTreeProvider)
-          contextMap.javascriptTreeProvider = renderJavascriptTree(data, context)
+          contextMap.javascriptTreeProvider = renderJavascriptTree(data)
         else
           contextMap.javascriptTreeProvider.update(data)
       }
