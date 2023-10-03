@@ -3,9 +3,10 @@
 </p>
 <p align="center"> <a href="./README.md">English</a> | 简体中文</p>
 
->WIP: 目前支持了vue
 
 解决vue2中单文件几千行，查找methods很痛苦的痛点
+
+![demo](/assets/demo.gif)
 
 ## :coffee:
 
