@@ -4,15 +4,17 @@ import type { ExtensionContext } from 'vscode'
 import * as vscode from 'vscode'
 
 export function renderTree(data: any, context: ExtensionContext, isSetup?: boolean) {
-  const treeData: TreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
-
+  let treeData: TreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+  let type = isSetup ? 'setup' : 'default'
   const { update } = render(treeData, 'function-quick-locking.id')
-
   return {
     update(data: any, isSetup?: boolean) {
-      const newTreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
-      update(newTreeData)
+      this.type = type = isSetup ? 'setup' : 'default'
+      treeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+      update(treeData)
     },
+    treeData,
+    type,
   }
 }
 
@@ -27,8 +29,10 @@ function generateTreeData(content: any) {
       children: methods.value.map((item: any) => {
         let label = item.key.name
         const params = item.value.type === 'Identifier' ? item.value.name : item.value.params.map((item: any) => item.name).join(',')
+        const name = label
         label += `    --->    (${params}) => {}`
         return {
+          name,
           label,
           iconPath: new vscode.ThemeIcon('symbol-method'),
           command: {
@@ -60,9 +64,11 @@ function generateTreeData(content: any) {
           label = item.key.name
           params = item.value.type === 'FunctionExpression' ? item.value.params.map((u: any) => u.key.name).join(',') : item.value.properties.map((u: any) => u.key.name).join(',')
         }
+        const name = label
         label += `    --->    (${params}) => {}`
 
         return {
+          name,
           label,
           iconPath: new vscode.ThemeIcon('symbol-method'),
           command: {
@@ -152,8 +158,10 @@ function generateSetupTreeData(data: any) {
           label = item.declarations[0].id.name
           params = getValue(item.declarations[0])
         }
+        const name = label
         label += `    --->    (${params}) => {}`
         return {
+          name,
           label,
           iconPath: new vscode.ThemeIcon('symbol-method'),
           command: {
@@ -181,8 +189,10 @@ function generateSetupTreeData(data: any) {
           label = item.declarations[0].id.name
 
         const labelDefault = getValue(item)
+        const name = label
         label += `   --->    ${JSON.stringify(labelDefault)}`
         return {
+          name,
           label,
           iconPath: new vscode.ThemeIcon('variable'),
           command: {
@@ -275,14 +285,14 @@ function getValue(data: any): any {
 }
 
 export function renderJavascriptTree(data: any, context: ExtensionContext) {
-  const treeData: TreeData = generateJavascriptTreeData(data)
+  let treeData: TreeData = generateJavascriptTreeData(data)
 
   const { update } = render(treeData, 'function-quick-locking.id')
 
   return {
     update(data: any, isSetup?: boolean) {
-      const newTreeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
-      update(newTreeData)
+      treeData = isSetup ? generateSetupTreeData(data) : generateTreeData(data)
+      update(treeData)
     },
   }
 }
