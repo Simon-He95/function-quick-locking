@@ -23,17 +23,27 @@ export function activate(context: ExtensionContext) {
         if (errors.length)
           return
         let data
-        if (scriptSetup)
-          data = parserSetup(tsParser(scriptSetup.content, { jsx: true, loc: true }))
-        else if (script)
-          data = parserDefault(tsParser(script.content, { jsx: true, loc: true }))
-        if (!data)
-          return
-        // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
-        if (!contextMap.vueTreeProvider)
-          contextMap.vueTreeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
-        else
-          contextMap.vueTreeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+
+        try {
+          if (scriptSetup)
+            data = parserSetup(tsParser(scriptSetup.content, { jsx: true, loc: true }))
+          else if (script)
+            data = parserDefault(tsParser(script.content, { jsx: true, loc: true }))
+
+          if (!data)
+            return
+          // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
+          if (!contextMap.vueTreeProvider)
+            contextMap.vueTreeProvider = renderTree({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+          else
+            contextMap.vueTreeProvider.update({ ...data, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+        }
+        catch (error) {
+          if (!contextMap.vueTreeProvider)
+            contextMap.vueTreeProvider = renderTree({}, !!scriptSetup)
+          else
+            contextMap.vueTreeProvider.update({ }, !!scriptSetup)
+        }
         break
       }
       case 'typescript':
