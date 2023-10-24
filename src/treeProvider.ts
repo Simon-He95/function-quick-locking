@@ -238,7 +238,9 @@ function generateSetupTreeData(data: any) {
 }
 
 function getValue(data: any): any {
-  const type = data.type
+  const type = data?.type
+  if (!type)
+    return data
   if (type === 'ObjectExpression') {
     return data.properties.reduce((result: any, item: any) => {
       const name = item.key.name
