@@ -19,7 +19,7 @@ export function renderTree(data: any, isSetup?: boolean) {
 
 function generateTreeData(content: any) {
   const treeData: TreeData = []
-  const { methods, computed, props, baseLine, data } = content
+  const { methods, computed, props, baseLine, data, components } = content
   if (methods) {
     treeData.push({
       label: 'methods',
@@ -109,6 +109,26 @@ function generateTreeData(content: any) {
       children: data.value.map((item: any) => {
         const labelDefault = getValue(item.value)
         const label = `${item.key.name}   --->   ${JSON.stringify(labelDefault)}`
+        return {
+          label,
+          iconPath: new vscode.ThemeIcon('variable'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
+
+  if (components) {
+    treeData.push({
+      label: 'components',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: components.value.map((item: any) => {
+        const label = item.key.name
         return {
           label,
           iconPath: new vscode.ThemeIcon('variable'),

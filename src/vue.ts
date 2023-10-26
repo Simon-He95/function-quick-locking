@@ -46,7 +46,7 @@ export function parserDefault(ast: VueAst) {
       value = properties
 
     else if (name === 'data' && type === 'FunctionExpression')
-      value = body.body[0].argument.properties
+      value = body.body.find((item: any) => item.type === 'ReturnStatement').argument.properties
 
     result[name] = {
       value,
