@@ -147,7 +147,7 @@ function generateTreeData(content: any) {
 
 function generateSetupTreeData(data: any) {
   const treeData: TreeData = []
-  const { methods, importer, type, baseLine, variables } = data
+  const { methods, importer, type, baseLine, variables, code } = data
   if (methods && methods.length) {
     treeData.push({
       label: 'methods',
@@ -192,6 +192,7 @@ function generateSetupTreeData(data: any) {
       }),
     })
   }
+
   if (variables && variables.length) {
     treeData.push({
       label: 'variable',
@@ -200,14 +201,17 @@ function generateSetupTreeData(data: any) {
       children: variables.map((item: any) => {
         let label = ''
         const type = item.type
-        if (type === 'ExpressionStatement')
-          label = item.expression.callee.name
-        else if (type === 'FunctionDeclaration')
-          label = item.id.name
-        else if (type === 'VariableDeclaration')
-          label = item.declarations[0].id.name
+        if (type === 'ExpressionStatement') { label = item.expression.callee.name }
+        else if (type === 'FunctionDeclaration') { label = item.id.name }
+        else if (type === 'VariableDeclaration') {
+          const declarationName = item.declarations[0].id
+          if (declarationName.type === 'ObjectPattern')
+            label = `{ ${declarationName.properties.map((i: any) => i.key.name).join(', ')} }`
+          else
+            label = declarationName.name
+        }
 
-        const labelDefault = getValue(item)
+        const labelDefault = getValue(item, label)
         const name = label
         label += `   --->    ${JSON.stringify(labelDefault)}`
         return {
@@ -223,6 +227,7 @@ function generateSetupTreeData(data: any) {
       }),
     })
   }
+
   if (importer) {
     treeData.push({
       label: 'importer',
@@ -254,10 +259,11 @@ function generateSetupTreeData(data: any) {
       }),
     })
   }
+
   return treeData
 }
 
-function getValue(data: any): any {
+function getValue(data: any, label = ''): any {
   const type = data?.type
   if (!type)
     return data
@@ -298,7 +304,7 @@ function getValue(data: any): any {
     return `(${data.params.map((item: any) => item.name).join(',')}) => {}`
   }
   else if (type === 'VariableDeclaration') {
-    return `${data.kind} ${data.declarations[0].id.name} = ${getValue(data.declarations[0].init)}`
+    return `${data.kind} ${label || data.declarations[0].id.name} = ${getValue(data.declarations[0].init)}`
   }
   else {
     return ''
