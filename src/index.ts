@@ -9,7 +9,7 @@ import {
 import { parse } from '@vue/compiler-sfc'
 import { parse as tsParser } from '@typescript-eslint/typescript-estree'
 import type { ExtensionContext } from 'vscode'
-import { parserDefault, parserSetup } from './vue'
+import { parserDefault, parserNotSetup, parserSetup } from './vue'
 import { parserJavascript } from './javascript'
 import { jumpFunc } from './jumpFunc'
 import { renderJavascriptTree, renderTree } from './treeProvider'
@@ -35,24 +35,32 @@ export function activate(context: ExtensionContext) {
         if (errors.length)
           return
         let data
-
+        let type: 0 | 1 | 2 = 0
         try {
-          if (scriptSetup)
+          if (scriptSetup) {
+            type = 0
             data = parserSetup(tsParser(scriptSetup.content, { jsx: true, loc: true }))
-          else if (script)
+          }
+          else if (script && script.content.includes('export default defineComponent')) {
+            data = parserNotSetup(tsParser(script.content, { jsx: true, loc: true }))
+            type = 1
+          }
+          else if (script) {
             data = parserDefault(tsParser(script.content, { jsx: true, loc: true }))
+            type = 2
+          }
 
           if (!data)
             return
           // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
           if (!contextMap.vueTreeProvider)
-            contextMap.vueTreeProvider = renderTree({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+            contextMap.vueTreeProvider = renderTree({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, type)
           else
-            contextMap.vueTreeProvider.update({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, !!scriptSetup)
+            contextMap.vueTreeProvider.update({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, type)
         }
         catch (error) {
           if (!contextMap.vueTreeProvider)
-            contextMap.vueTreeProvider = renderTree({}, !!scriptSetup)
+            contextMap.vueTreeProvider = renderTree({}, type)
           else
             contextMap.vueTreeProvider.update({}, !!scriptSetup)
         }

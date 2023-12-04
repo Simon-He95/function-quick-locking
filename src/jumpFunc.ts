@@ -1,4 +1,5 @@
-import { Range, Uri, languages, window } from 'vscode'
+import { languages, window } from 'vscode'
+import { jumpToLine } from '@vscode-use/utils'
 import type { Position } from 'vscode'
 
 export function jumpFunc(contextMap: any) {
@@ -21,17 +22,7 @@ export function jumpFunc(contextMap: any) {
       if (line === undefined)
         return
 
-      const originSelectionRange = new Range(position.line, start, position.line, end)
-
-      const result = [
-        {
-          originSelectionRange,
-          targetRange: new Range(line - 1, 0, line - 1, 0),
-          targetUri: Uri.file(uri),
-        },
-      ]
-
-      return result
+      jumpToLine(line)
     },
   })
 }
@@ -41,7 +32,7 @@ function getFuncName(lineText: string, position: Position) {
   let i = pos - 1
   let pre = lineText[i]
   let prefix = ''
-  while (!/[\s"]/.test(pre) && i >= 0) {
+  while (!/[\s",\(\)]/.test(pre) && i >= 0) {
     prefix = `${pre}${prefix}`
     pre = lineText[--i]
   }
@@ -49,7 +40,7 @@ function getFuncName(lineText: string, position: Position) {
   let suf = lineText[j]
   let suffix = ''
   const maxLen = lineText.length - 1
-  while (!/["]/.test(suf) && j < maxLen) {
+  while (!/[\s",\(\)]/.test(suf) && j < maxLen) {
     suffix += suf
     suf = lineText[++j]
   }
@@ -67,8 +58,6 @@ function findTarget(funName: string, data: any) {
   if (!data || !data.length)
     return
   for (const item of data) {
-    if (item.label !== 'methods')
-      continue
     const children = item.children
     const target = children.find((child: any) => child.name === funName)
     if (target) {

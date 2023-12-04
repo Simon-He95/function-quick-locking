@@ -4,7 +4,7 @@
 <p align="center"> <a href="./README.md">English</a> | 简体中文</p>
 
 
-解决vue2中单文件几千行，查找methods很痛苦的痛点
+解决 vue2 和 vue3非script setup中，单文件几千行，查找 `methods` 很痛苦的痛点,并且可以直接快速在 `template` 中通过 `option` 或 `ctrl` ，跳入代码💨
 
 ![demo](/assets/demo.gif)
 

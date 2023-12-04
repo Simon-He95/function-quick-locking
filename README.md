@@ -4,7 +4,7 @@
 <p align="center"> English | <a href="./README_zh.md">简体中文</a></p>
 
 
-Solve thousands of lines of single files in vue2 and find the painful pain points of methods.
+Solve vue2 and vue3 non-script setup, thousands of lines of a single file, find the painful pain points of `methods`, and jump into the code directly and quickly through `option` or `ctrl` in `template`💨
 
 ![demo](/assets/demo.gif)
 

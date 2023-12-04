@@ -55,3 +55,28 @@ export function parserDefault(ast: VueAst) {
   })
   return result
 }
+
+export function parserNotSetup(ast: VueAst) {
+  const body = ast.body
+  const target = body.find(item => item.type === 'ExportDefaultDeclaration') as any
+  if (!target)
+    return
+
+  const result: any = {
+    variables: [],
+    returnStatement: [],
+    functions: [],
+  }
+  const setup = target.declaration?.arguments[0].properties.find((item: any) => item?.key?.name === 'setup')
+  if (!setup)
+    return
+  setup.value.body.body.forEach((item: any) => {
+    if (item.type === 'ReturnStatement')
+      result.returnStatement.push(...item.argument.properties)
+    else if (item.type === 'VariableDeclaration')
+      result.variables.push(item.declarations[0])
+    else if (item.type === 'FunctionDeclaration')
+      result.functions.push(item)
+  })
+  return result
+}

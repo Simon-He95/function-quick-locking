@@ -2,14 +2,24 @@ import { renderTree as render } from '@vscode-use/treeprovider'
 import type { TreeData } from '@vscode-use/treeprovider'
 import * as vscode from 'vscode'
 
-export function renderTree(data: any, isSetup?: boolean) {
-  let treeData: TreeData = filterEmptyChildren(isSetup ? generateSetupTreeData(data) : generateTreeData(data))
-  let type = isSetup ? 'setup' : 'default'
+export function renderTree(data: any, type: 0 | 1 | 2) {
+  let treeData: TreeData = filterEmptyChildren(
+    type === 0
+      ? generateSetupTreeData(data)
+      : type === 1
+        ? generateNotSetupTreeData(data)
+        : generateTreeData(data),
+  )
   const { update } = render(treeData, 'function-quick-locking.id')
   return {
-    update(data: any, isSetup?: boolean) {
-      this.type = type = isSetup ? 'setup' : 'default'
-      treeData = filterEmptyChildren(isSetup ? generateSetupTreeData(data) : generateTreeData(data))
+    update(data: any, type: 0 | 1 | 2) {
+      this.type = type
+      treeData = filterEmptyChildren(
+        type === 0
+          ? generateSetupTreeData(data)
+          : type === 1
+            ? generateNotSetupTreeData(data)
+            : generateTreeData(data))
       update(treeData)
     },
     treeData,
@@ -43,6 +53,7 @@ function generateTreeData(content: any) {
       }),
     })
   }
+
   if (computed) {
     treeData.push({
       label: 'computed',
@@ -147,7 +158,7 @@ function generateTreeData(content: any) {
 
 function generateSetupTreeData(data: any) {
   const treeData: TreeData = []
-  const { methods, importer, type, baseLine, variables, code } = data
+  const { methods, importer, baseLine, variables } = data
   if (methods && methods.length) {
     treeData.push({
       label: 'methods',
@@ -263,6 +274,142 @@ function generateSetupTreeData(data: any) {
   return treeData
 }
 
+function generateNotSetupTreeData(data: any) {
+  const treeData: TreeData = []
+  const { functions, returnStatement, baseLine, variables } = data
+  if (variables && variables.length) {
+    treeData.push({
+      label: 'variable',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: variables.map((item: any) => {
+        let label = ''
+        const type = item.type
+        if (type === 'ExpressionStatement') { label = item.expression.callee.name }
+        else if (type === 'FunctionDeclaration') { label = item.id.name }
+        else if (type === 'VariableDeclaration') {
+          const declarationName = item.declarations[0].id
+          if (declarationName.type === 'ObjectPattern')
+            label = `{ ${declarationName.properties.map((i: any) => i.key.name).join(', ')} }`
+          else
+            label = declarationName.name
+        }
+        else if (type === 'VariableDeclarator') {
+          label = item.id.name
+        }
+
+        const labelDefault = getValue(item, label)
+        const name = label
+        label += `   --->    ${JSON.stringify(labelDefault)}`
+        return {
+          name,
+          label,
+          iconPath: new vscode.ThemeIcon('variable'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
+
+  if (functions && functions.length) {
+    treeData.push({
+      label: 'functions',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: functions.map((item: any) => {
+        let label = ''
+        let params = ''
+        const type = item.type
+        if (type === 'ExpressionStatement') {
+          label = item.expression.callee.name
+          params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'FunctionDeclaration') {
+          label = item.id.name
+          params = item.params.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'VariableDeclaration') {
+          label = item.declarations[0].id.name
+          params = getValue(item.declarations[0])
+        }
+        const name = label
+        label += `    --->    (${params}) => {}`
+        return {
+          name,
+          label,
+          iconPath: new vscode.ThemeIcon('symbol-method'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
+
+  if (returnStatement && functions.length) {
+    treeData.push({
+      label: 'returnStatement',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: returnStatement.map((item: any) => {
+        let label = ''
+        let params = ''
+        const type = item.type
+        if (type === 'ExpressionStatement') {
+          label = item.expression.callee.name
+          params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'FunctionDeclaration') {
+          label = item.id.name
+          params = item.params.map(getValue).reduce((result: string, cur: any) =>
+            result
+              ? `${result},${JSON.stringify(cur)}`
+              : JSON.stringify(cur)
+          , '')
+        }
+        else if (type === 'VariableDeclaration') {
+          label = item.declarations[0].id.name
+          params = getValue(item.declarations[0])
+        }
+        else if (type === 'Property') {
+          label = item.key.name
+        }
+        const name = label
+        return {
+          name,
+          label,
+          iconPath: new vscode.ThemeIcon('symbol-method'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
+
+  return treeData
+}
+
 function getValue(data: any, label = ''): any {
   const type = data?.type
   if (!type)
@@ -282,7 +429,7 @@ function getValue(data: any, label = ''): any {
     return data.name
   }
   else if (type === 'ArrayExpression') {
-    return data.elements.map(getValue)
+    return data.elements.map(getValue) || []
   }
   else if (type === 'MemberExpression') {
     if (data.property) {
@@ -305,6 +452,9 @@ function getValue(data: any, label = ''): any {
   }
   else if (type === 'VariableDeclaration') {
     return `${data.kind} ${label || data.declarations[0].id.name} = ${getValue(data.declarations[0].init)}`
+  }
+  else if (type === 'VariableDeclarator') {
+    return `${data.init.callee.name}(${getValue(data.init.arguments[0])})`
   }
   else {
     return ''
