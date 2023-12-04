@@ -39,14 +39,14 @@ export function activate(context: ExtensionContext) {
         try {
           if (scriptSetup) {
             type = 0
-            data = parserSetup(tsParser(scriptSetup.content, { jsx: true, loc: true }))
+            data = parserSetup(tsParser(scriptSetup.content, { jsx: true, loc: true, range: true }))
           }
           else if (script && script.content.includes('export default defineComponent')) {
-            data = parserNotSetup(tsParser(script.content, { jsx: true, loc: true }))
+            data = parserNotSetup(tsParser(script.content, { jsx: true, loc: true, range: true }))
             type = 1
           }
           else if (script) {
-            data = parserDefault(tsParser(script.content, { jsx: true, loc: true }))
+            data = parserDefault(tsParser(script.content, { jsx: true, loc: true, range: true }))
             type = 2
           }
 
@@ -54,7 +54,7 @@ export function activate(context: ExtensionContext) {
             return
           // 1.将数据渲染到侧边栏，以树形式，展示methods，props，computed；2. 监听点击事件，跳转对应代码行数，
           if (!contextMap.vueTreeProvider)
-            contextMap.vueTreeProvider = renderTree({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, type)
+            contextMap.vueTreeProvider = renderTree({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line, baseOffset: (script || scriptSetup)?.loc.start.offset }, type)
           else
             contextMap.vueTreeProvider.update({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, type)
         }

@@ -14,6 +14,7 @@ export function renderTree(data: any, type: 0 | 1 | 2) {
   return {
     update(data: any, type: 0 | 1 | 2) {
       this.type = type
+
       treeData = filterEmptyChildren(
         type === 0
           ? generateSetupTreeData(data)
@@ -284,6 +285,7 @@ function generateNotSetupTreeData(data: any) {
       iconPath: new vscode.ThemeIcon('symbol-module'),
       children: variables.map((item: any) => {
         let label = ''
+
         const type = item.type
         if (type === 'ExpressionStatement') { label = item.expression.callee.name }
         else if (type === 'FunctionDeclaration') { label = item.id.name }
@@ -295,10 +297,19 @@ function generateNotSetupTreeData(data: any) {
             label = declarationName.name
         }
         else if (type === 'VariableDeclarator') {
-          label = item.id.name
+          if (item.id.type === 'ObjectPattern')
+            label = item.id.properties[0].key.name
+          else
+            label = item.id.name
         }
-
-        const labelDefault = getValue(item, label)
+        let labelDefault
+        try {
+          labelDefault = getValue(item, label)
+        }
+        catch (error) {
+          const [start, end] = item.range
+          labelDefault = data.code.slice(data.baseOffset + start, data.baseOffset + end)
+        }
         const name = label
         label += `   --->    ${JSON.stringify(labelDefault)}`
         return {
@@ -360,7 +371,7 @@ function generateNotSetupTreeData(data: any) {
     })
   }
 
-  if (returnStatement && functions.length) {
+  if (returnStatement && returnStatement.length) {
     treeData.push({
       label: 'returnStatement',
       collapsed: true,
