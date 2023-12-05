@@ -15,7 +15,7 @@ export function renderTree(data: any, type: 0 | 1 | 2) {
     update(data: any, type: 0 | 1 | 2) {
       this.type = type
 
-      treeData = filterEmptyChildren(
+      this.treeData = treeData = filterEmptyChildren(
         type === 0
           ? generateSetupTreeData(data)
           : type === 1
@@ -99,8 +99,10 @@ function generateTreeData(content: any) {
       iconPath: new vscode.ThemeIcon('symbol-module'),
       children: props.value.map((item: any) => {
         const labelDefault = getValue(item.value)
+        const name = item.key.name
         const label = `${item.key.name}   --->    ${JSON.stringify(labelDefault)}`
         return {
+          name,
           label,
           iconPath: new vscode.ThemeIcon('variable'),
           command: {
@@ -120,8 +122,10 @@ function generateTreeData(content: any) {
       iconPath: new vscode.ThemeIcon('symbol-module'),
       children: data.value.map((item: any) => {
         const labelDefault = getValue(item.value)
+        const name = item.key.name
         const label = `${item.key.name}   --->   ${JSON.stringify(labelDefault)}`
         return {
+          name,
           label,
           iconPath: new vscode.ThemeIcon('variable'),
           command: {
@@ -142,6 +146,7 @@ function generateTreeData(content: any) {
       children: components.value.map((item: any) => {
         const label = item.key.name
         return {
+          name: label,
           label,
           iconPath: new vscode.ThemeIcon('variable'),
           command: {
@@ -187,7 +192,13 @@ function generateSetupTreeData(data: any) {
         }
         else if (type === 'VariableDeclaration') {
           label = item.declarations[0].id.name
-          params = getValue(item.declarations[0])
+          try {
+            params = getValue(item.declarations[0])
+          }
+          catch (error) {
+            const [start, end] = item.range
+            params = data.code.slice(data.baseOffset + start, data.baseOffset + end)
+          }
         }
         const name = label
         label += `    --->    (${params}) => {}`
@@ -222,8 +233,14 @@ function generateSetupTreeData(data: any) {
           else
             label = declarationName.name
         }
-
-        const labelDefault = getValue(item, label)
+        let labelDefault
+        try {
+          labelDefault = getValue(item, label)
+        }
+        catch (error) {
+          const [start, end] = item.range
+          labelDefault = data.code.slice(data.baseOffset + start, data.baseOffset + end)
+        }
         const name = label
         label += `   --->    ${JSON.stringify(labelDefault)}`
         return {
