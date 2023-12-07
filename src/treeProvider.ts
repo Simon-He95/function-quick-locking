@@ -224,14 +224,32 @@ function generateSetupTreeData(data: any) {
       children: variables.map((item: any) => {
         let label = ''
         const type = item.type
-        if (type === 'ExpressionStatement') { label = item.expression.callee.name }
-        else if (type === 'FunctionDeclaration') { label = item.id.name }
+        let names
+        if (type === 'ExpressionStatement') {
+          label = item.expression.callee.name
+        }
+        else if (type === 'FunctionDeclaration') {
+          label = item.id.name
+        }
         else if (type === 'VariableDeclaration') {
           const declarationName = item.declarations[0].id
-          if (declarationName.type === 'ObjectPattern')
+          if (declarationName.type === 'ObjectPattern') {
             label = `{ ${declarationName.properties.map((i: any) => i.key.name).join(', ')} }`
-          else
-            label = declarationName.name
+          }
+          else if (declarationName.type === 'ArrayPattern') {
+            names = []
+            declarationName.elements.forEach((e: any) => {
+              if (e.type === 'Identifier') { names.push(e.name) }
+              else if (e.type === 'ObjectPattern') {
+                e.properties.forEach((p: any) => {
+                  if (p.type === 'Property')
+                    names.push(p.key.name)
+                })
+              }
+            })
+            label = data.code.slice(data.baseOffset + declarationName.range[0], data.baseOffset + declarationName.range[1])
+          }
+          else { label = declarationName.name }
         }
         let labelDefault
         try {
@@ -244,6 +262,7 @@ function generateSetupTreeData(data: any) {
         const name = label
         label += `   --->    ${JSON.stringify(labelDefault)}`
         return {
+          names,
           name,
           label,
           iconPath: new vscode.ThemeIcon('variable'),
@@ -277,12 +296,13 @@ function generateSetupTreeData(data: any) {
           ? `import ${names[0]} from ${from}`
           : `import { ${names.join(',')} } from ${from}`
         return {
+          names,
           label,
           iconPath: new vscode.ThemeIcon('extensions'),
           command: {
             title: label,
             command: 'function-quick-locking.jump',
-            arguments: [item.loc, baseLine],
+            arguments: [item.loc, baseLine, from],
           },
         }
       }),

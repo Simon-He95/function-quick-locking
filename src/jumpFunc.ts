@@ -1,5 +1,7 @@
+import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
 import { languages, window } from 'vscode'
-import { jumpToLine } from '@vscode-use/utils'
+import { getCurrentFileUrl, jumpToLine } from '@vscode-use/utils'
 import type { Position } from 'vscode'
 
 export function jumpFunc(contextMap: any) {
@@ -18,11 +20,13 @@ export function jumpFunc(contextMap: any) {
 
       if (funName.includes(' '))
         return
-      const line = findTarget(funName, vueTreeProvider.treeData)
-      if (line === undefined)
+      const target = findTarget(funName, vueTreeProvider.treeData)
+      if (target === undefined)
         return
-
-      jumpToLine(line)
+      if (Array.isArray(target))
+        jumpToLine(target[0], getAbsolute(target[1]))
+      else
+        jumpToLine(target)
     },
   })
 }
@@ -59,10 +63,32 @@ function findTarget(funName: string, data: any) {
     return
   for (const item of data) {
     const children = item.children
-    const target = children.find((child: any) => child.name === funName)
+    const target = children.find((child: any) =>
+      child.names ? child.names.includes(funName) : child.name === funName,
+    )
     if (target) {
       const data = target.command.arguments
+      if (target.names)
+        return [data[0].start.line + data[1] - 1, data[2]]
+
       return data[0].start.line + data[1] - 1
     }
+  }
+}
+
+const suffix = ['.ts', '.js', '.tsx', '.jsx']
+function getAbsolute(url: string) {
+  url = resolve(getCurrentFileUrl(), '..', url)
+  if (/.(ts|js|tsx|jsx)$/.test(url))
+    return url
+  for (const s of suffix) {
+    const _url = `${url}${s}`
+    if (existsSync(_url))
+      return _url
+  }
+  for (const s of suffix) {
+    const _url = `${url}/index${s}`
+    if (existsSync(_url))
+      return _url
   }
 }
