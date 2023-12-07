@@ -13,10 +13,11 @@ import { parserDefault, parserNotSetup, parserSetup } from './vue'
 import { parserJavascript } from './javascript'
 import { jumpFunc } from './jumpFunc'
 import { renderJavascriptTree, renderTree } from './treeProvider'
+import { getAlias } from './utils'
 
 export function activate(context: ExtensionContext) {
   const contextMap: any = {}
-
+  getAlias()
   context.subscriptions.push(registerCommand('function-quick-locking.jump', (data, baseLine) => {
     jumpToLine(baseLine !== undefined ? data.start.line + baseLine - 1 : data.start.line)
   }))
@@ -57,7 +58,7 @@ export function activate(context: ExtensionContext) {
             if (!contextMap.vueTreeProvider)
               contextMap.vueTreeProvider = renderTree({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line, baseOffset: (script || scriptSetup)?.loc.start.offset }, type)
             else
-              contextMap.vueTreeProvider.update({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line }, type)
+              contextMap.vueTreeProvider.update({ ...data, code, baseLine: (script || scriptSetup)?.loc.start.line, baseOffset: (script || scriptSetup)?.loc.start.offset }, type)
           }
           catch (error) {
             if (!contextMap.vueTreeProvider)

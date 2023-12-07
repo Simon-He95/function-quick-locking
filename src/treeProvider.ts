@@ -176,19 +176,29 @@ function generateSetupTreeData(data: any) {
         const type = item.type
         if (type === 'ExpressionStatement') {
           label = item.expression.callee.name
-          params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
-            result
-              ? `${result},${JSON.stringify(cur)}`
-              : JSON.stringify(cur)
-          , '')
+          try {
+            params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
+              result
+                ? `${result},${JSON.stringify(cur)}`
+                : JSON.stringify(cur)
+            , '')
+          }
+          catch {
+            params = data.code.slice(data.baseOffset + item.range[0], data.baseOffset + item.range[1])
+          }
         }
         else if (type === 'FunctionDeclaration') {
           label = item.id.name
-          params = item.params.map(getValue).reduce((result: string, cur: any) =>
-            result
-              ? `${result},${JSON.stringify(cur)}`
-              : JSON.stringify(cur)
-          , '')
+          try {
+            params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
+              result
+                ? `${result},${JSON.stringify(cur)}`
+                : JSON.stringify(cur)
+            , '')
+          }
+          catch {
+            params = data.code.slice(data.baseOffset + item.range[0], data.baseOffset + item.range[1])
+          }
         }
         else if (type === 'VariableDeclaration') {
           label = item.declarations[0].id.name
@@ -224,7 +234,7 @@ function generateSetupTreeData(data: any) {
       children: variables.map((item: any) => {
         let label = ''
         const type = item.type
-        let names
+        let names: any
         if (type === 'ExpressionStatement') {
           label = item.expression.callee.name
         }
@@ -238,15 +248,8 @@ function generateSetupTreeData(data: any) {
           }
           else if (declarationName.type === 'ArrayPattern') {
             names = []
-            declarationName.elements.forEach((e: any) => {
-              if (e.type === 'Identifier') { names.push(e.name) }
-              else if (e.type === 'ObjectPattern') {
-                e.properties.forEach((p: any) => {
-                  if (p.type === 'Property')
-                    names.push(p.key.name)
-                })
-              }
-            })
+            declarationName.elements.forEach((e: any) => getName(e, names))
+
             label = data.code.slice(data.baseOffset + declarationName.range[0], data.baseOffset + declarationName.range[1])
           }
           else { label = declarationName.name }
@@ -585,4 +588,15 @@ function generateJavascriptTreeData(data: any) {
 
 function filterEmptyChildren(data: any) {
   return data.filter((item: any) => item.children && item.children.length)
+}
+
+function getName(item: any, result: any = []) {
+  if (item.type === 'Property')
+    result.push(item.key.name)
+  else if (item.type === 'ObjectPattern')
+    item.properties.forEach((p: any) => getName(p, result))
+  else if (item.type === 'Identifier')
+    result.push(item.name)
+
+  return result
 }

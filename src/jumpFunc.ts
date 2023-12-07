@@ -1,14 +1,12 @@
-import { resolve } from 'node:path'
-import { existsSync } from 'node:fs'
 import { languages, window } from 'vscode'
-import { getCurrentFileUrl, jumpToLine } from '@vscode-use/utils'
+import { jumpToLine } from '@vscode-use/utils'
 import type { Position } from 'vscode'
 
 export function jumpFunc(contextMap: any) {
   return languages.registerDefinitionProvider([
     { scheme: 'file', language: 'vue' },
   ], {
-    provideDefinition(document, position) {
+    async provideDefinition(document, position) {
       const uri = window.activeTextEditor?.document.uri.fsPath
       if (!uri)
         return
@@ -23,10 +21,29 @@ export function jumpFunc(contextMap: any) {
       const target = findTarget(funName, vueTreeProvider.treeData)
       if (target === undefined)
         return
-      if (Array.isArray(target))
-        jumpToLine(target[0], getAbsolute(target[1]))
-      else
-        jumpToLine(target)
+      if (Array.isArray(target)) {
+        // target[1] 有值要更新跳转的行数
+        if (!target[1])
+          jumpToLine(target[0] - 1)
+
+        // const url = getAbsolute(target[1])
+        // if (!url)
+        // return
+        // else {
+        //   const content = await fsp.readFile(url, 'utf-8')
+        //   const ast = parse(content, { jsx: true, typescript: true, loc: true })
+        //   for (const b of ast.body) {
+        //     const declaration = (b as any).declaration
+        //     if (b.type === 'ExportNamedDeclaration') {
+        //       if (declaration && declaration.type === 'VariableDeclaration' && declaration.declarations[0].id.name === funName) {
+        //         jumpToLine(b.loc.start.line - 1, url)
+        //         return
+        //     }
+        //   }
+        // }
+        // }
+      }
+      else { jumpToLine(target) }
     },
   })
 }
@@ -73,22 +90,5 @@ function findTarget(funName: string, data: any) {
 
       return data[0].start.line + data[1] - 1
     }
-  }
-}
-
-const suffix = ['.ts', '.js', '.tsx', '.jsx']
-function getAbsolute(url: string) {
-  url = resolve(getCurrentFileUrl(), '..', url)
-  if (/.(ts|js|tsx|jsx)$/.test(url))
-    return url
-  for (const s of suffix) {
-    const _url = `${url}${s}`
-    if (existsSync(_url))
-      return _url
-  }
-  for (const s of suffix) {
-    const _url = `${url}/index${s}`
-    if (existsSync(_url))
-      return _url
   }
 }
