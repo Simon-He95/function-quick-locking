@@ -66,10 +66,15 @@ export function parserNotSetup(ast: VueAst) {
     variables: [],
     returnStatement: [],
     functions: [],
+    importer: [],
+  }
+  for (const b of body) {
+    if (b.type === 'ImportDeclaration')
+      result.importer.push(b)
   }
   const setup = target.declaration?.arguments[0].properties.find((item: any) => item?.key?.name === 'setup')
   if (!setup)
-    return
+    return result
 
   setup.value.body.body.forEach((item: any) => {
     if (item.type === 'ReturnStatement')

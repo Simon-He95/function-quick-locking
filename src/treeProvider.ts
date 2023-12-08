@@ -283,7 +283,7 @@ function generateSetupTreeData(data: any) {
     })
   }
 
-  if (importer) {
+  if (importer && importer.length) {
     treeData.push({
       label: 'importer',
       collapsed: true,
@@ -321,7 +321,7 @@ function generateSetupTreeData(data: any) {
 
 function generateNotSetupTreeData(data: any) {
   const treeData: TreeData = []
-  const { functions, returnStatement, baseLine, variables } = data
+  const { functions, returnStatement, baseLine, variables, importer } = data
   if (variables && variables.length) {
     treeData.push({
       label: 'variable',
@@ -456,6 +456,39 @@ function generateNotSetupTreeData(data: any) {
             title: label,
             command: 'function-quick-locking.jump',
             arguments: [item.loc, baseLine],
+          },
+        }
+      }),
+    })
+  }
+
+  if (importer && importer.length) {
+    treeData.push({
+      label: 'importer',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: importer.map((item: any) => {
+        let isDefault = false
+        const names: string[] = []
+        const specifiers = item.specifiers
+        const from = item.source.value
+        specifiers.forEach((cur: any) => {
+          if (cur.type === 'ImportDefaultSpecifier')
+            isDefault = true
+
+          names.push(cur.local.name)
+        })
+        const label = isDefault
+          ? `import ${names[0]} from ${from}`
+          : `import { ${names.join(',')} } from ${from}`
+        return {
+          names,
+          label,
+          iconPath: new vscode.ThemeIcon('extensions'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, baseLine, from],
           },
         }
       }),
