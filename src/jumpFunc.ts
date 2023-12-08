@@ -53,7 +53,7 @@ function getFuncName(lineText: string, position: Position) {
   let i = pos - 1
   let pre = lineText[i]
   let prefix = ''
-  while (!/[\s",\(\)]/.test(pre) && i >= 0) {
+  while (!/[\s",\(\){}]/.test(pre) && i >= 0) {
     prefix = `${pre}${prefix}`
     pre = lineText[--i]
   }
@@ -61,7 +61,7 @@ function getFuncName(lineText: string, position: Position) {
   let suf = lineText[j]
   let suffix = ''
   const maxLen = lineText.length - 1
-  while (!/[\s",\(\)]/.test(suf) && j < maxLen) {
+  while (!/[\s",\(\){}]/.test(suf) && j < maxLen) {
     suffix += suf
     suf = lineText[++j]
   }

@@ -244,7 +244,11 @@ function generateSetupTreeData(data: any) {
         else if (type === 'VariableDeclaration') {
           const declarationName = item.declarations[0].id
           if (declarationName.type === 'ObjectPattern') {
-            label = `{ ${declarationName.properties.map((i: any) => i.key.name).join(', ')} }`
+            names = []
+            label = `{ ${declarationName.properties.map((e: any) => {
+              getName(e, names)
+              return e.key.name
+            }).join(', ')} }`
           }
           else if (declarationName.type === 'ArrayPattern') {
             names = []
