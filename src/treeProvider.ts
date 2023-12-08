@@ -530,8 +530,8 @@ export function renderJavascriptTree(data: any) {
 
 function generateJavascriptTreeData(data: any) {
   const treeData: TreeData = []
-  const { importer, exporter, methods } = data
-  if (methods) {
+  const { importer, exporter, methods, code } = data
+  if (methods && methods.length) {
     treeData.push({
       label: 'methods',
       collapsed: true,
@@ -542,36 +542,61 @@ function generateJavascriptTreeData(data: any) {
         const type = item.type
         if (type === 'ExpressionStatement') {
           label = item.expression.callee.name
-          params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
-            result
-              ? `${result},${JSON.stringify(cur)}`
-              : JSON.stringify(cur)
-          , '')
-        }
-        else if (type === 'FunctionDeclaration') {
-          label = item.id.name
-          params = item.params.map(getValue).reduce((result: string, cur: any) =>
-            result
-              ? `${result},${JSON.stringify(cur)}`
-              : JSON.stringify(cur)
-          , '')
-        }
-        else if (type === 'VariableDeclaration') {
-          label = item.declarations[0].id.name
-          params = getValue(item.declarations[0])
-        }
-        else if (type === 'ExportNamedDeclaration') {
-          if (item.declaration.type === 'FunctionDeclaration') {
-            label = item.declaration.id.name
-            params = item.declaration.params.map(getValue).reduce((result: string, cur: any) =>
+          try {
+            params = item.expression.arguments.map(getValue).reduce((result: string, cur: any) =>
               result
                 ? `${result},${JSON.stringify(cur)}`
                 : JSON.stringify(cur)
             , '')
           }
+          catch (error) {
+            params = getLocCode(item.loc, code)
+          }
+        }
+        else if (type === 'FunctionDeclaration') {
+          label = item.id.name
+          try {
+            params = item.params.map(getValue).reduce((result: string, cur: any) =>
+              result
+                ? `${result},${JSON.stringify(cur)}`
+                : JSON.stringify(cur)
+            , '')
+          }
+          catch (error) {
+            params = getLocCode(item.loc, code)
+          }
+        }
+        else if (type === 'VariableDeclaration') {
+          label = item.declarations[0].id.name
+          try {
+            params = getValue(item.declarations[0])
+          }
+          catch (error) {
+            params = getLocCode(item.loc, code)
+          }
+        }
+        else if (type === 'ExportNamedDeclaration') {
+          if (item.declaration.type === 'FunctionDeclaration') {
+            label = item.declaration.id.name
+            try {
+              params = item.declaration.params.map(getValue).reduce((result: string, cur: any) =>
+                result
+                  ? `${result},${JSON.stringify(cur)}`
+                  : JSON.stringify(cur)
+              , '')
+            }
+            catch (error) {
+              params = getLocCode(item.loc, code)
+            }
+          }
           else {
             label = item.declaration.declarations[0].id.name
-            params = getValue(item.declaration.declarations[0].init)
+            try {
+              params = getValue(item.declaration.declarations[0].init)
+            }
+            catch (error) {
+              params = getLocCode(item.loc, code)
+            }
           }
         }
         label += `    --->    (${params}) => {}`
@@ -582,6 +607,59 @@ function generateJavascriptTreeData(data: any) {
             title: label,
             command: 'function-quick-locking.jump',
             arguments: [item.loc],
+          },
+        }
+      }),
+    })
+  }
+
+  if (importer && importer.length) {
+    treeData.push({
+      label: 'importer',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: importer.map((item: any) => {
+        let isDefault = false
+        const names: string[] = []
+        const specifiers = item.specifiers
+        const from = item.source.value
+        specifiers.forEach((cur: any) => {
+          if (cur.type === 'ImportDefaultSpecifier')
+            isDefault = true
+
+          names.push(cur.local.name)
+        })
+        const label = isDefault
+          ? `import ${names[0]} from ${from}`
+          : `import { ${names.join(',')} } from ${from}`
+        return {
+          names,
+          label,
+          iconPath: new vscode.ThemeIcon('extensions'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, 0, from],
+          },
+        }
+      }),
+    })
+  }
+
+  if (exporter && exporter.length) {
+    treeData.push({
+      label: 'exporter',
+      collapsed: true,
+      iconPath: new vscode.ThemeIcon('symbol-module'),
+      children: exporter.map((item: any) => {
+        const label = getLocCode(item.loc, code)
+        return {
+          label,
+          iconPath: new vscode.ThemeIcon('extensions'),
+          command: {
+            title: label,
+            command: 'function-quick-locking.jump',
+            arguments: [item.loc, 0],
           },
         }
       }),
@@ -603,4 +681,12 @@ function getName(item: any, result: any = []) {
     result.push(item.name)
 
   return result
+}
+
+function getLocCode(loc: any, code: string) {
+  const positionStart = new vscode.Position(loc.start.line - 1, loc.start.column)
+  const positionEnd = new vscode.Position(loc.end.line - 1, loc.end.column)
+  const offsetStart = vscode.window.activeTextEditor!.document.offsetAt(positionStart)
+  const offsetEnd = vscode.window.activeTextEditor!.document.offsetAt(positionEnd)
+  return code.slice(offsetStart, offsetEnd)
 }

@@ -68,13 +68,14 @@ export function activate(context: ExtensionContext) {
           }
           break
         }
+        case 'typescriptreact':
         case 'typescript':
         case 'javascript': {
-          const data = parserJavascript(tsParser(code, { jsx: true, loc: true }))
+          const data = parserJavascript(tsParser(code, { jsx: true, loc: true, offset: true }))
           if (!contextMap.javascriptTreeProvider)
-            contextMap.javascriptTreeProvider = renderJavascriptTree(data)
+            contextMap.javascriptTreeProvider = renderJavascriptTree({ ...data, code })
           else
-            contextMap.javascriptTreeProvider.update(data)
+            contextMap.javascriptTreeProvider.update({ ...data, code })
         }
       }
     }
