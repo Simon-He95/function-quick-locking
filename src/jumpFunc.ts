@@ -43,7 +43,7 @@ export function jumpFunc(contextMap: any) {
         // }
         // }
       }
-      else { jumpToLine(target) }
+      else { jumpToLine(target - 1) }
     },
   })
 }
