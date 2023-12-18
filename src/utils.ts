@@ -33,7 +33,7 @@ export async function getAlias() {
   }
 }
 
-export function getAbsoluteUrl(url: string, suffix = '.vue', currentFileUrl = getCurrentFileUrl()) {
+export function getAbsoluteUrl(url: string, suffix = '.vue', currentFileUrl = getCurrentFileUrl()!) {
   let isUseAlia = false
   const end = url.split('/').slice(-1)[0].split('.')[1]
   if (end && end !== suffix.split('.')[1])

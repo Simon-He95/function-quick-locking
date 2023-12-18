@@ -1,5 +1,5 @@
 import { languages, window } from 'vscode'
-import { jumpToLine } from '@vscode-use/utils'
+import { createDefinitionLocation, getConfiguration, getCurrentFileUrl, jumpToLine, getKeyWords, getLineText } from '@vscode-use/utils'
 import type { Position } from 'vscode'
 
 export function jumpFunc(contextMap: any) {
@@ -7,45 +7,59 @@ export function jumpFunc(contextMap: any) {
     { scheme: 'file', language: 'vue' },
   ], {
     async provideDefinition(document, position) {
-      const uri = window.activeTextEditor?.document.uri.fsPath
-      if (!uri)
-        return
-      const { vueTreeProvider } = contextMap
-      if (!vueTreeProvider || vueTreeProvider.type === 'setup')
-        return
-      const lineText = document.lineAt(position).text // 当前行字符串
-      const { funName, start, end } = getFuncName(lineText, position)
-
-      if (funName.includes(' '))
-        return
-      const target = findTarget(funName, vueTreeProvider.treeData)
-      if (target === undefined)
-        return
-      if (Array.isArray(target)) {
-        // target[1] 有值要更新跳转的行数
-        if (!target[1])
-          jumpToLine(target[0] - 1)
-
-        // const url = getAbsolute(target[1])
-        // if (!url)
-        // return
-        // else {
-        //   const content = await fsp.readFile(url, 'utf-8')
-        //   const ast = parse(content, { jsx: true, typescript: true, loc: true })
-        //   for (const b of ast.body) {
-        //     const declaration = (b as any).declaration
-        //     if (b.type === 'ExportNamedDeclaration') {
-        //       if (declaration && declaration.type === 'VariableDeclaration' && declaration.declarations[0].id.name === funName) {
-        //         jumpToLine(b.loc.start.line - 1, url)
-        //         return
-        //     }
-        //   }
-        // }
-        // }
-      }
-      else { jumpToLine(target - 1) }
+      return jump(contextMap, position)
     },
   })
+}
+
+export function jump(contextMap: any, position: Position,command:boolean = false) {
+  const uri = window.activeTextEditor?.document.uri.fsPath
+  if (!uri)
+    return
+  const { vueTreeProvider } = contextMap
+  if (!vueTreeProvider || vueTreeProvider.type === 'setup')
+    return
+  const lineText = getLineText(position.line)!
+  const { funName, start, end } = getFuncName(lineText, position)
+
+  if (/[<>\s]/.test(funName))
+    return
+  const target = findTarget(funName, vueTreeProvider.treeData)
+  if (target === undefined)
+    return
+
+  const click = getConfiguration('function-quick-locking.click')
+  if (Array.isArray(target)) {
+    // target[1] 有值要更新跳转的行数
+    if (!target[1]) {
+      if (!command && click)
+        return createDefinitionLocation(getCurrentFileUrl()!, target[0] - 1)
+
+      jumpToLine(target[0] - 1)
+    }
+
+    // const url = getAbsolute(target[1])
+    // if (!url)
+    // return
+    // else {
+    //   const content = await fsp.readFile(url, 'utf-8')
+    //   const ast = parse(content, { jsx: true, typescript: true, loc: true })
+    //   for (const b of ast.body) {
+    //     const declaration = (b as any).declaration
+    //     if (b.type === 'ExportNamedDeclaration') {
+    //       if (declaration && declaration.type === 'VariableDeclaration' && declaration.declarations[0].id.name === funName) {
+    //         jumpToLine(b.loc.start.line - 1, url)
+    //         return
+    //     }
+    //   }
+    // }
+    // }
+  }
+  else {
+    if (!command && click)
+      return createDefinitionLocation(getCurrentFileUrl()!, target - 1)
+    jumpToLine(target - 1)
+  }
 }
 
 function getFuncName(lineText: string, position: Position) {

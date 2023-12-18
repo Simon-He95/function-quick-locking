@@ -3,15 +3,17 @@ import {
   getActiveText,
   getActiveTextEditorLanguageId,
   getCurrentFileUrl,
+  getSelection,
   jumpToLine,
   registerCommand,
+  setConfiguration,
 } from '@vscode-use/utils'
 import { parse } from '@vue/compiler-sfc'
 import { parse as tsParser } from '@typescript-eslint/typescript-estree'
-import type { ExtensionContext } from 'vscode'
+import { Position, type ExtensionContext } from 'vscode'
 import { parserDefault, parserNotSetup, parserSetup } from './vue'
 import { parserJavascript } from './javascript'
-import { jumpFunc } from './jumpFunc'
+import { jump, jumpFunc } from './jumpFunc'
 import { renderJavascriptTree, renderTree } from './treeProvider'
 import { getAlias } from './utils'
 
@@ -91,6 +93,18 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(addEventListener('text-save', () => updateTree()))
 
   context.subscriptions.push(jumpFunc(contextMap))
+  context.subscriptions.push(registerCommand('function-quick-locking.click', () => {
+    setConfiguration('function-quick-locking.click', true)
+  }))
+  context.subscriptions.push(registerCommand('function-quick-locking.noclick', () => {
+    setConfiguration('function-quick-locking.click', false)
+  }))
+  context.subscriptions.push(registerCommand('function-quick-locking.enter', async () => {
+    const selection = getSelection()
+    if (!selection)
+      return
+    jump(contextMap, new Position(selection.line, selection.character),true)
+  }))
 }
 
 export function deactivate() {

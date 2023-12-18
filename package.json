@@ -50,7 +50,40 @@
           "name": "function-quick-locking"
         }
       ]
-    }
+    },
+    "configuration": {
+      "type": "object",
+      "title": "function-quick-locking",
+      "properties": {
+        "function-quick-locking.click": {
+          "type": "boolean",
+          "default": true,
+          "description": "Does it need to be clicked to trigger?"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "function-quick-locking.click",
+        "title": "function-quick-locking click ☑️"
+      },
+      {
+        "command": "function-quick-locking.noclick",
+        "title": "function-quick-locking no click ✖️"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "function-quick-locking.enter",
+        "key": "cmd+e",
+        "when": "isMac"
+      },
+      {
+        "command": "function-quick-locking.enter",
+        "key": "ctrl+e",
+        "when": "!isMac"
+      }
+    ]
   },
   "scripts": {
     "dev": "pnpm build --watch",
@@ -69,7 +102,7 @@
     "@types/vscode": "^1.77.0",
     "@typescript-eslint/typescript-estree": "^6.7.2",
     "@vscode-use/treeprovider": "^0.0.4",
-    "@vscode-use/utils": "^0.0.66",
+    "@vscode-use/utils": "^0.0.69",
     "@vue/compiler-sfc": "^3.3.4",
     "bumpp": "^9.1.0",
     "eslint": "^8.37.0",
